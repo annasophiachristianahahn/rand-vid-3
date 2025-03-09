@@ -1,0 +1,65 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+input, button {
+    display: block;
+    margin-top: 5px;
+}
+
+/* Modified status div for better debugging visibility on iOS */
+#status {
+    margin-top: 20px;
+    color: #333;
+    background: #f2f2f2;
+    padding: 10px;
+    max-height: 400px; /* Increased height */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    font-size: 12px; /* Smaller font for more content */
+    line-height: 1.4;
+    white-space: pre-wrap; /* Preserve line breaks and wrap text */
+    word-break: break-word; /* Break long words if needed */
+}
+
+/* Make error messages more visible */
+#status p[style*="color: red"] {
+    background-color: #fff0f0;
+    padding: 5px;
+    margin: 5px 0;
+    border-left: 3px solid #ff0000;
+}
+
+video {
+    display: block;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Optional: Style the download button */
+#download-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #0078d4;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px; /* Larger text for better iOS tapping */
+    font-weight: bold;
+}
+
+#download-button:hover {
+    background-color: #005fa3;
+}
