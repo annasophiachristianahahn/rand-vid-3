@@ -209,11 +209,13 @@ async function processVideos(files, finalLength, minClipLength, maxClipLength, z
       throw e;
     }
 
-    // Try different mimeTypes for better iOS compatibility
+    // Modified: Try different mimeTypes with better iOS compatibility
     const possibleMimeTypes = [
-      'video/mp4; codecs="avc1.42E01E"',
-      'video/webm; codecs="vp8, opus"',
+      'video/webm; codecs=vp9',
+      'video/webm; codecs=vp8',
       'video/webm',
+      'video/mp4; codecs="avc1.4D401E"',
+      'video/mp4; codecs="avc1.42E01E"',
       'video/mp4'
     ];
     
@@ -256,8 +258,12 @@ async function processVideos(files, finalLength, minClipLength, maxClipLength, z
 
     recorder.ondataavailable = (e) => {
       updateProgress(`Data available event: chunk size = ${e.data.size} bytes`);
-      chunks.push(e.data);
-      window.debugInfo.videoInfo.chunksRecorded++;
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+        window.debugInfo.videoInfo.chunksRecorded++;
+      } else {
+        updateProgress(`Warning: Received empty data chunk, ignoring`);
+      }
     };
     
     recorder.onerror = (e) => {
@@ -267,8 +273,23 @@ async function processVideos(files, finalLength, minClipLength, maxClipLength, z
     recorder.onstop = () => {
       try {
         updateProgress(`Recording stopped. Creating blob from ${chunks.length} chunks`);
+        
+        // Check if we have any valid chunks
+        if (chunks.length === 0) {
+          updateError('Error: No valid video chunks were recorded');
+          showDebugSummary();
+          return;
+        }
+        
         const blob = new Blob(chunks, { type: recorder.mimeType });
         updateProgress(`Blob created: size=${(blob.size/1024/1024).toFixed(2)}MB, type=${blob.type}`);
+        
+        // Check for empty blob
+        if (blob.size === 0) {
+          updateError('Error: Generated video has zero size. This is a common issue on iOS.');
+          showDebugSummary();
+          return;
+        }
         
         const videoURL = URL.createObjectURL(blob);
         updateProgress('URL object created for blob');
@@ -395,7 +416,8 @@ async function processVideos(files, finalLength, minClipLength, maxClipLength, z
     // Start recording and capture the recording start time.
     try {
       updateProgress('Starting MediaRecorder...');
-      recorder.start(1000); // Request data every second for better reliability
+      // Use smaller timeslice for better iOS compatibility
+      recorder.start(100); // Request data every 100ms for better reliability on iOS
       updateProgress('MediaRecorder started successfully');
     } catch (e) {
       updateError('Failed to start MediaRecorder', e);
@@ -478,6 +500,11 @@ async function processVideos(files, finalLength, minClipLength, maxClipLength, z
 
     try {
       updateProgress('Stopping MediaRecorder...');
+      // Ensure we've generated at least some chunks
+      if (chunks.length === 0) {
+        updateError('Warning: No chunks recorded yet. Waiting additional 500ms before stopping.');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
       recorder.stop();
       updateProgress('MediaRecorder stopped successfully');
     } catch (e) {
